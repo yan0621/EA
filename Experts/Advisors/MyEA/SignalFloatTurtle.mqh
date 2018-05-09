@@ -27,14 +27,14 @@ public:
    virtual int LongCondition(void);
    virtual int ShortCondition(void);
 protected:
-   void InitMA(CIndicators *indicators);
+   bool InitMA(CIndicators *indicators);
 };
 
 CSignalFloatTurtle::CSignalFloatTurtle(void):
    m_period(PERIOD_D1),
    m_period_signal(28),
    m_ma_method(0), // simple average
-   m_applied(0), // price close
+   m_applied(0) // price close
    {}
 
 CSignalFloatTurtle::~CSignalFloatTurtle(void) {}
