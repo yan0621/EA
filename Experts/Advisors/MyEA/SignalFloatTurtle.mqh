@@ -4,20 +4,26 @@ class CSignalFloatTurtle : public CExpertSignal {
 private:
    CiMA m_MA;
    // parameters
-   ENUM_TIMEFRAMES m_period; // peirod type of MA signal
-   int m_period_signal; // peirod length of MA signal
+   int m_ma_period; // peirod length of MA signal
    ENUM_MA_METHOD m_ma_method; // method for calculating ma
-   int m_applied; // applied pirce of MA signal
+   int m_ma_applied; // applied pirce of MA signal
+   
+   CiCustom m_turtle;
+   //parameters
+   int m_turtle_size; // size of turtle rule
+   
+   // patterns
+   int m_pattern_0; // turtle breakout following MA direction
 
 public:
    CSignalFloatTurtle(void);
    ~CSignalFloatTurtle(void);
    
    // setter
-   void Period(ENUM_TIMEFRAMES value) { m_period = value; }
-   void PeriodSignal(int value) { m_period_signal = value; }
-   void Method(ENUM_MA_METHOD value) { m_ma_method = value; }
-   void Applied(ENUM_APPLIED_PRICE value) { m_applied = value; } 
+   void MAPeriod(int value) { m_ma_period = value; }
+   void MAMethod(ENUM_MA_METHOD value) { m_ma_method = value; }
+   void MAApplied(ENUM_APPLIED_PRICE value) { m_ma_applied = value; }
+   void TurtleSize(int value) { m_turtle_size = value; }
    
    //--- method of verification of settings
    virtual bool ValidationSettings(void);
@@ -28,13 +34,18 @@ public:
    virtual int ShortCondition(void);
 protected:
    bool InitMA(CIndicators *indicators);
+   bool InitTurtle(CIndicators *indicators);
+   
+   // get data
+   double MA(int idx) { return m_MA.Main(idx); }
+   double Turtle(int idx) { return m_turtle.GetData(0, idx); }
 };
 
 CSignalFloatTurtle::CSignalFloatTurtle(void):
-   m_period(PERIOD_D1),
-   m_period_signal(28),
+   m_ma_period(28),
    m_ma_method(0), // simple average
-   m_applied(0) // price close
+   m_ma_applied(0), // price close
+   m_turtle_size(4)
    {}
 
 CSignalFloatTurtle::~CSignalFloatTurtle(void) {}
@@ -59,6 +70,9 @@ bool CSignalFloatTurtle::InitIndicators(CIndicators *indicators) {
    if (!InitMA(indicators)) {
       return(false);
    }
+   if (!InitTurtle(indicators)) {
+      return(false);
+   }
 //--- ok
    return(true);
 }
@@ -70,7 +84,7 @@ bool CSignalFloatTurtle::InitMA(CIndicators *indicators) {
       return(false);
    }
 //--- initialize object
-   if (!m_MA.Create(m_symbol.Name(), m_period, m_period_signal, 0, m_ma_method, m_applied)) {
+   if (!m_MA.Create(m_symbol.Name(), m_period, m_ma_period, 0, m_ma_method, m_ma_applied)) {
       printf(__FUNCTION__+": error initializing object");
       return(false);
    }
@@ -78,11 +92,44 @@ bool CSignalFloatTurtle::InitMA(CIndicators *indicators) {
    return(true);
 }
 
-int CSignalFloatTurtle::LongCondition() {
+bool CSignalFloatTurtle::InitTurtle(CIndicators *indicators) {
+//--- add object to collection
+   if (!indicators.Add(GetPointer(m_turtle))) {
+      printf(__FUNCTION__+": error adding object");
+      return(false);
+   }
+//--- Set parameters
+   MqlParam params[2];
+   params[0].type = TYPE_STRING;
+   params[0].string_value = "Turtle.mq5";
+   params[1].type = TYPE_INT;
+   params[1].integer_value = m_turtle_size;
+//--- initialize object
+   if (!m_turtle.Create(m_symbol.Name(), m_period, IND_CUSTOM, 2, params)) {
+      printf(__FUNCTION__+": error initializing object");
+      return(false);
+   }
+   if (!m_turtle.NumBuffers(1)) {
+      return(false);
+   }
    
-   return(false);
+   return(true);
+}
+
+int CSignalFloatTurtle::LongCondition() {
+   int result = 0;
+   int idx = StartIndex();
+   if (Turtle(idx) > 0 && MA(idx) > MA(idx - 1)) {
+      result = m_pattern_0;
+   }
+   return(result);
 }
 
 int CSignalFloatTurtle::ShortCondition() {
-   return(false);
+   int result = 0;
+   int idx = StartIndex();
+   if (Turtle(idx) < 0 && MA(idx) < MA(idx - 1)) {
+      result = m_pattern_0;
+   }
+   return(result);
 }
