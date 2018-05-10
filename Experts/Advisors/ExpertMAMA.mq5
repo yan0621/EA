@@ -12,7 +12,7 @@
 #include <Expert\Expert.mqh>
 #include <Expert\Signal\SignalMA.mqh>
 #include <Expert\Trailing\TrailingMA.mqh>
-#include <Expert\Money\MoneyNone.mqh>
+#include <Expert\Money\MoneyFixedRisk.mqh>
 //+------------------------------------------------------------------+
 //| Inputs                                                           |
 //+------------------------------------------------------------------+
@@ -108,7 +108,7 @@ int OnInit(void)
       return(-7);
      }
 //--- Creation of money object
-   CMoneyNone *money=new CMoneyNone;
+   CMoneyFixedRisk *money=new CMoneyFixedRisk;
    if(money==NULL)
      {
       //--- failed
@@ -125,6 +125,7 @@ int OnInit(void)
       return(-9);
      }
 //--- Set money parameters
+   money.Percent(2.0);
 //--- Check money parameters
    if(!money.ValidationSettings())
      {
