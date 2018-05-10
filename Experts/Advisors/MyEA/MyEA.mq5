@@ -14,7 +14,8 @@ input string Inp_Expert_Title            ="ExpertFloatTurtle";
 int          Expert_MagicNumber          =10982;
 bool         Expert_EveryTick            =false;
 //--- inputs for signals
-input int      trend_ma_num=28;
+input int Inp_Signal_MA_Period = 28;
+input int Inp_Signal_MA_PeriodSignal = 19; // Daily
 
 // Global Var
 CExpert ExtExpert;
@@ -41,6 +42,9 @@ int OnInit()
       ExtExpert.Deinit();
       return(-2);
    }
+//--- Set signal parameters
+   signal.Period(Inp_Signal_MA_Period);
+   signal.PeriodSignal(Inp_Signal_MA_PeriodSignal);
 //--- Add signal to expert (will be deleted automatically))
    if(!ExtExpert.InitSignal(signal))
      {
