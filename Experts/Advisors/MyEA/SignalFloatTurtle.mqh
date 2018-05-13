@@ -32,6 +32,9 @@ public:
    //--- methods of checking if the market models are formed
    virtual int LongCondition(void);
    virtual int ShortCondition(void);
+
+   virtual bool OpenLongParams(double &price,double &sl,double &tp,datetime &expiration);
+   virtual bool OpenShortParams(double &price,double &sl,double &tp,datetime &expiration);
 protected:
    bool InitMA(CIndicators *indicators);
    bool InitTurtle(CIndicators *indicators);
@@ -39,13 +42,19 @@ protected:
    // get data
    double MA(int idx) { return m_MA.Main(idx); }
    double Turtle(int idx) { return m_turtle.GetData(0, idx); }
+   bool isMARising(int idx) { return MA(idx) > MA(idx-1) && MA(idx-1) > MA(idx-2); }
+   bool isMAFalling(int idx) { return MA(idx) < MA(idx-1) && MA(idx-1) < MA(idx-2); }
+
+   // config
+   ENUM_TIMEFRAMES getUpLevelTimeFrames(ENUM_TIMEFRAMES currentTimeFrame)
 };
 
 CSignalFloatTurtle::CSignalFloatTurtle(void):
    m_ma_period(28),
    m_ma_method(0), // simple average
    m_ma_applied(0), // price close
-   m_turtle_size(4)
+   m_turtle_size(5),
+   m_pattern_0(100) // single pattern
    {}
 
 CSignalFloatTurtle::~CSignalFloatTurtle(void) {}
@@ -119,7 +128,7 @@ bool CSignalFloatTurtle::InitTurtle(CIndicators *indicators) {
 int CSignalFloatTurtle::LongCondition() {
    int result = 0;
    int idx = StartIndex();
-   if (Turtle(idx) > 0 && MA(idx) > MA(idx - 1)) {
+   if (Turtle(idx) > 0 && isMARising(idx)) {
       result = m_pattern_0;
    }
    return(result);
@@ -128,8 +137,17 @@ int CSignalFloatTurtle::LongCondition() {
 int CSignalFloatTurtle::ShortCondition() {
    int result = 0;
    int idx = StartIndex();
-   if (Turtle(idx) < 0 && MA(idx) < MA(idx - 1)) {
+   if (Turtle(idx) < 0 && isMAFalling(idx)) {
       result = m_pattern_0;
    }
    return(result);
+}
+
+bool CSignalFloatTurtle::OpenLongParams(double &price,double &sl,double &tp,datetime &expiration) {
+   double base_price = (m_base_price == 0.0) ? m_symbol.Ask() : m_base_price;
+   price = m_symbol.NormalizePrice(base_price + m_price_level * PriceLevelUnit());
+   
+}
+
+bool CSignalFloatTurtle::OpenShortParams(double &price,double &sl,double &tp,datetime &expiration) {
 }
