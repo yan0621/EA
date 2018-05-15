@@ -33,8 +33,8 @@ public:
    virtual int LongCondition(void);
    virtual int ShortCondition(void);
 
-   virtual bool OpenLongParams(double &price,double &sl,double &tp,datetime &expiration);
-   virtual bool OpenShortParams(double &price,double &sl,double &tp,datetime &expiration);
+   //virtual bool OpenLongParams(double &price,double &sl,double &tp,datetime &expiration);
+   //virtual bool OpenShortParams(double &price,double &sl,double &tp,datetime &expiration);
 protected:
    bool InitMA(CIndicators *indicators);
    bool InitTurtle(CIndicators *indicators);
@@ -42,18 +42,18 @@ protected:
    // get data
    double MA(int idx) { return m_MA.Main(idx); }
    double Turtle(int idx) { return m_turtle.GetData(0, idx); }
-   bool isMARising(int idx) { return MA(idx) > MA(idx-1) && MA(idx-1) > MA(idx-2); }
-   bool isMAFalling(int idx) { return MA(idx) < MA(idx-1) && MA(idx-1) < MA(idx-2); }
+   bool isMARising(int idx) { return MA(idx) > MA(idx+1) && MA(idx+1) > MA(idx+2); }
+   bool isMAFalling(int idx) { return MA(idx) < MA(idx+1) && MA(idx+1) < MA(idx+2); }
 
    // config
-   ENUM_TIMEFRAMES getUpLevelTimeFrames(ENUM_TIMEFRAMES currentTimeFrame)
+   //ENUM_TIMEFRAMES getUpLevelTimeFrames(ENUM_TIMEFRAMES currentTimeFrame)
 };
 
 CSignalFloatTurtle::CSignalFloatTurtle(void):
-   m_ma_period(28),
-   m_ma_method(0), // simple average
+   m_ma_period(20),
+   m_ma_method(0), // simple average, expotional, smoothed, linear weight
    m_ma_applied(0), // price close
-   m_turtle_size(5),
+   m_turtle_size(4),
    m_pattern_0(100) // single pattern
    {}
 
@@ -110,15 +110,18 @@ bool CSignalFloatTurtle::InitTurtle(CIndicators *indicators) {
 //--- Set parameters
    MqlParam params[2];
    params[0].type = TYPE_STRING;
-   params[0].string_value = "Turtle.mq5";
+   params[0].string_value = "Turtle";
    params[1].type = TYPE_INT;
    params[1].integer_value = m_turtle_size;
 //--- initialize object
-   if (!m_turtle.Create(m_symbol.Name(), m_period, IND_CUSTOM, 2, params)) {
-      printf(__FUNCTION__+": error initializing object");
+   int initResult = 0;
+   initResult = m_turtle.CustomCreate(m_symbol.Name(), m_period, IND_CUSTOM, 2, params);
+   if (initResult < 0) {
+      printf(__FUNCTION__+": error initializing object: %d", initResult);
       return(false);
    }
    if (!m_turtle.NumBuffers(1)) {
+   printf(__FUNCTION__+": error setting buffer number");
       return(false);
    }
    
@@ -128,7 +131,7 @@ bool CSignalFloatTurtle::InitTurtle(CIndicators *indicators) {
 int CSignalFloatTurtle::LongCondition() {
    int result = 0;
    int idx = StartIndex();
-   if (Turtle(idx) > 0 && isMARising(idx)) {
+   if (Turtle(idx) > 0 && Close(idx) > MA(idx) && isMARising(idx)) {
       result = m_pattern_0;
    }
    return(result);
@@ -137,17 +140,8 @@ int CSignalFloatTurtle::LongCondition() {
 int CSignalFloatTurtle::ShortCondition() {
    int result = 0;
    int idx = StartIndex();
-   if (Turtle(idx) < 0 && isMAFalling(idx)) {
+   if (Turtle(idx) < 0 && Close(idx) < MA(idx) && isMAFalling(idx)) {
       result = m_pattern_0;
    }
    return(result);
-}
-
-bool CSignalFloatTurtle::OpenLongParams(double &price,double &sl,double &tp,datetime &expiration) {
-   double base_price = (m_base_price == 0.0) ? m_symbol.Ask() : m_base_price;
-   price = m_symbol.NormalizePrice(base_price + m_price_level * PriceLevelUnit());
-   
-}
-
-bool CSignalFloatTurtle::OpenShortParams(double &price,double &sl,double &tp,datetime &expiration) {
 }

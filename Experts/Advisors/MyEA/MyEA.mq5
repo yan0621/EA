@@ -6,7 +6,7 @@
 #include <Expert\Expert.mqh>
 #include <Expert\Money\MoneyNone.mqh>
 #include "SignalFloatTurtle.mqh"
-#include "TrailingFloatTurtle.mqh"
+#include "TrailingSR.mqh"
 
 //--- input parameters
 //--- inputs for expert
@@ -14,8 +14,8 @@ input string Inp_Expert_Title            ="ExpertFloatTurtle";
 int          Expert_MagicNumber          =10982;
 bool         Expert_EveryTick            =false;
 //--- inputs for signals
-input int Inp_Signal_MA_Period = 28;
-input int Inp_Signal_MA_PeriodSignal = 19; // Daily
+input int Inp_Signal_MA_Period = 20;
+input int Inp_Signal_Turtle_Size = 4;
 
 // Global Var
 CExpert ExtExpert;
@@ -43,8 +43,6 @@ int OnInit()
       return(-2);
    }
 //--- Set signal parameters
-   signal.Period(Inp_Signal_MA_Period);
-   signal.PeriodSignal(Inp_Signal_MA_PeriodSignal);
 //--- Add signal to expert (will be deleted automatically))
    if(!ExtExpert.InitSignal(signal))
      {
@@ -54,7 +52,8 @@ int OnInit()
       return(-3);
      }
  //-- Set Signal Parameters
- 
+   signal.MAPeriod(Inp_Signal_MA_Period);
+   signal.TurtleSize(Inp_Signal_Turtle_Size);
  //--- Check signal parameters
    if(!signal.ValidationSettings())
      {
@@ -64,7 +63,7 @@ int OnInit()
       return(-4);
      }
 //--- Creation of trailing object
-   CTrailingFloatTurtle*trailing=new CTrailingFloatTurtle;
+   CTrailingSR *trailing = new CTrailingSR;
    if(trailing==NULL)
      {
       //--- failed
@@ -81,6 +80,7 @@ int OnInit()
       return(-6);
      }
 //--- Set trailing parameters
+   //trailing.Period(Inp_Signal_MA_Period);
 //--- Check trailing parameters
    if(!trailing.ValidationSettings())
      {
@@ -135,22 +135,19 @@ void OnDeinit(const int reason) {
 //+------------------------------------------------------------------+
 //| Function-event handler "tick"                                    |
 //+------------------------------------------------------------------+
-void OnTick(void)
-  {
+void OnTick(void) {
    ExtExpert.OnTick();
-  }
+}
 //+------------------------------------------------------------------+
 //| Function-event handler "trade"                                   |
 //+------------------------------------------------------------------+
-void OnTrade(void)
-  {
+void OnTrade(void) {
    ExtExpert.OnTrade();
-  }
+}
 //+------------------------------------------------------------------+
 //| Function-event handler "timer"                                   |
 //+------------------------------------------------------------------+
-void OnTimer(void)
-  {
+void OnTimer(void) {
    ExtExpert.OnTimer();
-  }
+}
 //+------------------------------------------------------------------+

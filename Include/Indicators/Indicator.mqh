@@ -111,6 +111,8 @@ public:
    //--- method for creating
    bool              Create(const string symbol,const ENUM_TIMEFRAMES period,
                             const ENUM_INDICATOR type,const int num_params,const MqlParam &params[]);
+   int               CustomCreate(const string symbol,const ENUM_TIMEFRAMES period,
+                                  const ENUM_INDICATOR type,const int num_params,const MqlParam &params[]);
    virtual bool      BufferResize(const int size);
    //--- methods of access to data
    int               BarsCalculated(void) const;
@@ -168,11 +170,13 @@ bool CIndicator::Create(const string symbol,const ENUM_TIMEFRAMES period,
   {
 //--- check history
    if(!SetSymbolPeriod(symbol,period))
+      printf(__FUNCTION__+"Failed to set symbol period");
       return(false);
 //--- create
    m_handle=IndicatorCreate(symbol,period,type,num_params,params);
 //--- check result
    if(m_handle==INVALID_HANDLE)
+      printf(__FUNCTION__+"Failed to create handle");
       return(false);
 //--- idicator successfully created
    if(!Initialize(symbol,period,num_params,params))
@@ -180,10 +184,34 @@ bool CIndicator::Create(const string symbol,const ENUM_TIMEFRAMES period,
       //--- initialization failed
       IndicatorRelease(m_handle);
       m_handle=INVALID_HANDLE;
+      printf(__FUNCTION__+"Failed to init indicator");
       return(false);
      }
 //--- ok
    return(true);
+  }
+
+int CIndicator::CustomCreate(const string symbol,const ENUM_TIMEFRAMES period,
+                              const ENUM_INDICATOR type,const int num_params,const MqlParam &params[])
+  {
+//--- check history
+   if(!SetSymbolPeriod(symbol,period))
+      return(-1);
+//--- create
+   m_handle=IndicatorCreate(symbol,period,type,num_params,params);
+//--- check result
+   if(m_handle==INVALID_HANDLE)
+      return(-2);
+//--- idicator successfully created
+   if(!Initialize(symbol,period,num_params,params))
+     {
+      //--- initialization failed
+      IndicatorRelease(m_handle);
+      m_handle=INVALID_HANDLE;
+      return(-3);
+     }
+//--- ok
+   return(0);
   }
 //+------------------------------------------------------------------+
 //| Returns the amount of calculated indicator data                  |

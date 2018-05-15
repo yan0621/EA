@@ -28,7 +28,6 @@ int OnInit()
   {
 //--- indicator buffers mapping
    SetIndexBuffer(0,directionBuffer,INDICATOR_DATA);
-   
 //---
    return(INIT_SUCCEEDED);
   }
@@ -47,7 +46,16 @@ int OnCalculate(const int rates_total,
                 const int &spread[])
   {
 //---
-   for (int i = 0; i < rates_total; ++i) {
+   if (rates_total < size) {
+      return(0);
+   }
+   int limit;
+   if (prev_calculated == 0) {
+      limit = 0;
+   } else {
+      limit = prev_calculated - 1;
+   }
+   for (int i = limit; i < rates_total && !IsStopped(); ++i) {
       double max = 0;
       double min = 99999.0;
       for (int j = i - 1; j >= 0 && j >= i - size; --j) {
