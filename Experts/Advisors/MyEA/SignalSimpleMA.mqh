@@ -4,6 +4,10 @@
 
 #include <Expert\ExpertSignal.mqh>
 
+// config
+const double DAILY_MIN_SLOPE = 0.00056;
+const double H4_MIN_SLOPE = 0.000094;
+
 class CSignalSimpleMA : public CExpertSignal {
 private:
    CiMA m_ma;
@@ -13,7 +17,7 @@ private:
    ENUM_MA_METHOD m_ma_method;      // the "method of averaging" parameter of the indicator
    ENUM_APPLIED_PRICE m_ma_applied;    // the "object of averaging" parameter of the indicator
    //--- "weights" of market models (0-100)
-   int m_pattern_0;      // model 0 "price is on the necessary side from the indicator"
+   int m_pattern_0;      // model 0 "close price is on the necessary side of indicator and indicator is moving towards right direction with big enough slope"
 
 public:
    CSignalSimpleMA(void);
@@ -34,9 +38,15 @@ public:
    
 protected:
    //--- method of initialization of the indicator
-   bool              InitMA(CIndicators *indicators);
+   bool InitMA(CIndicators *indicators);
    //--- methods of getting data
-   double            MA(int ind)                         { return(m_ma.Main(ind));     }
+   double MA(int idx) { return(m_ma.Main(idx)); }
+   double MASlope(int idx) { return((MA(idx) - MA(idx+1)) / MA(idx+1)); }
+
+   double getMinSlope();
+
+   bool matchLongPattern0(int idx) { return(Close(idx) > MA(idx) && MASlope(idx) > getMinSlope()); }
+   bool matchShortPaterrn0(int idx) { return(Close(idx) < MA(idx) && -MASlope(idx) > getMinSlope()); }
 };
 
 //+------------------------------------------------------------------+
@@ -112,14 +122,26 @@ bool CSignalMA::InitMA(CIndicators *indicators) {
    return(true);
 }
 
+double getMinSlope() {
+  switch (m_period) {
+    case PERIOD_H4: return(H4_MIN_SLOPE);
+    case PERIOD_D1: return(DAILY_MIN_SLOPE);
+    default: return(0);
+  }
+}
+
 int CSignalMA::LongCondition(void) {
    int result = 0;
-   int idx = StartIndex();
-   
+   if (matchLongPattern0(StartIndex())) {
+      result = m_pattern_0;
+   }
    return(result);
 }
 
 int CSignalMA::ShortCondition(void) {
    int result = 0;
+   if (matchShortPaterrn0(StartIndex())) {
+      return = m_pattern_0;
+   }
    return(result);
 }

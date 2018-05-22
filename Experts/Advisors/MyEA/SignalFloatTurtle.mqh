@@ -1,13 +1,7 @@
-#include <Expert\ExpertSignal.mqh>
+#include "SignalSimpleMA.mqh"
 
-class CSignalFloatTurtle : public CExpertSignal {
+class CSignalFloatTurtle : public CSignalSimpleMA {
 private:
-   CiMA m_MA;
-   // parameters
-   int m_ma_period; // peirod length of MA signal
-   ENUM_MA_METHOD m_ma_method; // method for calculating ma
-   int m_ma_applied; // applied pirce of MA signal
-   
    CiCustom m_turtle;
    //parameters
    int m_turtle_size; // size of turtle rule
@@ -18,11 +12,7 @@ private:
 public:
    CSignalFloatTurtle(void);
    ~CSignalFloatTurtle(void);
-   
-   // setter
-   void MAPeriod(int value) { m_ma_period = value; }
-   void MAMethod(ENUM_MA_METHOD value) { m_ma_method = value; }
-   void MAApplied(ENUM_APPLIED_PRICE value) { m_ma_applied = value; }
+
    void TurtleSize(int value) { m_turtle_size = value; }
    
    //--- method of verification of settings
@@ -41,18 +31,11 @@ protected:
    
    // get data
    double MA(int idx) { return m_MA.Main(idx); }
+   double MASlope(int idx) { return((MA(idx) - MA(idx+1)) / MA(idx+1)); }
    double Turtle(int idx) { return m_turtle.GetData(0, idx); }
-   bool isMARising(int idx) { return MA(idx) > MA(idx+1) && MA(idx+1) > MA(idx+2); }
-   bool isMAFalling(int idx) { return MA(idx) < MA(idx+1) && MA(idx+1) < MA(idx+2); }
-
-   // config
-   //ENUM_TIMEFRAMES getUpLevelTimeFrames(ENUM_TIMEFRAMES currentTimeFrame)
 };
 
 CSignalFloatTurtle::CSignalFloatTurtle(void):
-   m_ma_period(20),
-   m_ma_method(0), // simple average, expotional, smoothed, linear weight
-   m_ma_applied(0), // price close
    m_turtle_size(4),
    m_pattern_0(100) // single pattern
    {}
@@ -60,7 +43,7 @@ CSignalFloatTurtle::CSignalFloatTurtle(void):
 CSignalFloatTurtle::~CSignalFloatTurtle(void) {}
 
 bool CSignalFloatTurtle::ValidationSettings(void) {
-   if (!CExpertSignal::ValidationSettings()) {
+   if (!CSignalSimpleMA::ValidationSettings()) {
       return(false);
    }
    if (m_period <= 0) {
@@ -73,28 +56,11 @@ bool CSignalFloatTurtle::InitIndicators(CIndicators *indicators) {
 //--- check of pointer is performed in the method of the parent class
 //---
 //--- initialization of indicators and timeseries of additional filters
-   if (!CExpertSignal::InitIndicators(indicators)) {
+   if (!CSignalSimpleMA::InitIndicators(indicators)) {
       return(false);
    }
-   if (!InitMA(indicators)) {
-      return(false);
-   }
-   if (!InitTurtle(indicators)) {
-      return(false);
-   }
-//--- ok
-   return(true);
-}
 
-bool CSignalFloatTurtle::InitMA(CIndicators *indicators) {
-//--- add object to collection
-   if (!indicators.Add(GetPointer(m_MA))) {
-      printf(__FUNCTION__+": error adding object");
-      return(false);
-   }
-//--- initialize object
-   if (!m_MA.Create(m_symbol.Name(), m_period, m_ma_period, 0, m_ma_method, m_ma_applied)) {
-      printf(__FUNCTION__+": error initializing object");
+   if (!InitTurtle(indicators)) {
       return(false);
    }
 //--- ok
@@ -131,7 +97,7 @@ bool CSignalFloatTurtle::InitTurtle(CIndicators *indicators) {
 int CSignalFloatTurtle::LongCondition() {
    int result = 0;
    int idx = StartIndex();
-   if (Turtle(idx) > 0 && Close(idx) > MA(idx) && isMARising(idx)) {
+   if (Turtle(idx) > 0 && CSignalSimpleMA::matchLongPattern0(idx)) {
       result = m_pattern_0;
    }
    return(result);
@@ -140,7 +106,7 @@ int CSignalFloatTurtle::LongCondition() {
 int CSignalFloatTurtle::ShortCondition() {
    int result = 0;
    int idx = StartIndex();
-   if (Turtle(idx) < 0 && Close(idx) < MA(idx) && isMAFalling(idx)) {
+   if (Turtle(idx) < 0 && CSignalSimpleMA::matchShortPattern0(idx)) {
       result = m_pattern_0;
    }
    return(result);
