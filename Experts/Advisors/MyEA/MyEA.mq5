@@ -52,7 +52,7 @@ int OnInit()
       return(-3);
      }
  //-- Set Signal Parameters
-   signal.MAPeriod(Inp_Signal_MA_Period);
+   signal.PeriodMA(Inp_Signal_MA_Period);
    signal.TurtleSize(Inp_Signal_Turtle_Size);
  //--- Check signal parameters
    if(!signal.ValidationSettings())

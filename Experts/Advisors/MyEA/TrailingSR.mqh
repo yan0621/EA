@@ -4,7 +4,7 @@
  * Trailing with Support and Resistance Level
  */
 class CTrailingSR : public CExpertTrailing {
-private:
+public:
   static const int MAX_RATE_NUM;
   static const int MIN_CONTINOUS_CANDLE_NUM;
   static const int PEAK_RADIUS;
@@ -17,8 +17,7 @@ public:
   virtual bool      CheckTrailingStopShort(CPositionInfo *position,double &sl,double &tp);
 
 protected:
-  ENUM_TIMEFRAMES getFrameToAnalyze();
-  double calculateStopLevel(MqlRates historyData[], int dateLen, int direction);
+  double calculateStopLevel(MqlRates &historyData[], int dataLen, bool isLongOrder);
 };
 
 const int CTrailingSR::MAX_RATE_NUM = 12;
@@ -37,31 +36,23 @@ CTrailingSR::~CTrailingSR(void) {
 }
 //+------------------------------------------------------------------+
 
-ENUM_TIMEFRAMES getFrameToAnalyze() {
-  switch(m_period) {
-    case PERIOD_D1: return PERIOD_H4;
-    case PERIOD_H4: return PERIOD_M30;
-    default: return NULL;
-  }
-}
-
-double calculateStopLevel(MqlRates historyData[], int dateLen, bool isLongOrder) {
+double CTrailingSR::calculateStopLevel(MqlRates &historyData[], int dataLen, bool isLongOrder) {
   int continousNum = 0;
   int lastBarDirection = 0; // 1: close > open; -1: close < open
   double minPrice = 9999999;
   double maxPrice = 0;
-  // skip current bar, which is not fixed yet
-  for (int i = dateLen - 1; i >= 0; --i) {
-    MsqlRates data = historyData[i];
+  
+  for (int i = dataLen - 1; i >= 0; --i) {
+    MqlRates data = historyData[i];
     if (i < dataLen - 1 && i > 0) {
       if (isLongOrder) {
         // search for minimal value for long order
-        if (data.low <= data[i+1].low && data.low <= data[i-1].low) {
+        if (data.low <= historyData[i+1].low && data.low <= historyData[i-1].low) {
           return data.low;
         }
       }
       else {
-        if (data.high >= data[i+1].high && data.high >= data[i-1].high) {
+        if (data.high >= historyData[i+1].high && data.high >= historyData[i-1].high) {
           return data.high;
         }
       }
@@ -114,6 +105,7 @@ double calculateStopLevel(MqlRates historyData[], int dateLen, bool isLongOrder)
       }
     }
   }
+  return 0;
 }
 
 bool CTrailingSR::CheckTrailingStopLong(CPositionInfo *position,double &sl,double &tp) {
@@ -122,12 +114,12 @@ bool CTrailingSR::CheckTrailingStopLong(CPositionInfo *position,double &sl,doubl
   }
 
   MqlRates historyData[];
-  CopyRates(m_symbol.Name(), getFrameToAnalyze(), StartIndex(), MAX_RATE_NUM, historyData);
+  CopyRates(m_symbol.Name(), m_period, StartIndex(), MAX_RATE_NUM, historyData);
 
   double level = NormalizeDouble(m_symbol.Bid() - m_symbol.StopsLevel() * m_symbol.Point(), m_symbol.Digits());
-  double new_sl = NormalizeDouble(calculateStopLevel(historyData, MAX_RATE_NUM - 1, true), m_symbol.Digits());
+  double new_sl = NormalizeDouble(calculateStopLevel(historyData, MAX_RATE_NUM, true), m_symbol.Digits());
   double pos_sl = position.StopLoss();
-  double base = (pos_sl == 0.0) ? position.PriceOpen() : pos_sl;
+  double base = (pos_sl == 0.0) ? 0.0 : pos_sl;
 
   sl = EMPTY_VALUE;
   tp = EMPTY_VALUE;
@@ -136,7 +128,6 @@ bool CTrailingSR::CheckTrailingStopLong(CPositionInfo *position,double &sl,doubl
   }
 
   return(sl != EMPTY_VALUE);
-  }
 }
 
 bool CTrailingSR::CheckTrailingStopShort(CPositionInfo *position,double &sl,double &tp) {
@@ -145,12 +136,12 @@ bool CTrailingSR::CheckTrailingStopShort(CPositionInfo *position,double &sl,doub
   }
 
   MqlRates historyData[];
-  CopyRates(m_symbol.Name(), getFrameToAnalyze(), StartIndex(), MAX_RATE_NUM, historyData);
+  CopyRates(m_symbol.Name(), m_period, StartIndex(), MAX_RATE_NUM, historyData);
 
   double level = NormalizeDouble(m_symbol.Bid() - m_symbol.StopsLevel() * m_symbol.Point(), m_symbol.Digits());
-  double new_sl = NormalizeDouble(calculateStopLevel(historyData, MAX_RATE_NUM - 1, false), m_symbol.Digits());
+  double new_sl = NormalizeDouble(calculateStopLevel(historyData, MAX_RATE_NUM, false), m_symbol.Digits());
   double pos_sl = position.StopLoss();
-  double base = (pos_sl == 0.0) ? position.PriceOpen() : pos_sl;
+  double base = (pos_sl == 0.0) ? 999999.9 : pos_sl;
 
   sl = EMPTY_VALUE;
   tp = EMPTY_VALUE;

@@ -9,7 +9,7 @@ const double DAILY_MIN_SLOPE = 0.00056;
 const double H4_MIN_SLOPE = 0.000094;
 
 class CSignalSimpleMA : public CExpertSignal {
-private:
+protected:
    CiMA m_ma;
    
    int m_ma_period;      // the "period of averaging" parameter of the indicator
@@ -46,28 +46,31 @@ protected:
    double getMinSlope();
 
    bool matchLongPattern0(int idx) { return(Close(idx) > MA(idx) && MASlope(idx) > getMinSlope()); }
-   bool matchShortPaterrn0(int idx) { return(Close(idx) < MA(idx) && -MASlope(idx) > getMinSlope()); }
+   bool matchShortPattern0(int idx) { return(Close(idx) < MA(idx) && -MASlope(idx) > getMinSlope()); }
 };
 
 //+------------------------------------------------------------------+
 //| Constructor                                                      |
 //+------------------------------------------------------------------+
-CSignalMA::CSignalMA(void) : m_ma_period(12),
-                             m_ma_shift(0),
-                             m_ma_method(MODE_SMA),
-                             m_ma_applied(PRICE_CLOSE),
-                             m_pattern_0(100),
-{}
+CSignalSimpleMA::CSignalSimpleMA(void):
+   m_ma_period(12),
+   m_ma_shift(0),
+   m_ma_method(MODE_SMA),
+   m_ma_applied(PRICE_CLOSE),
+   m_pattern_0(100)
+{
+   m_used_series |= USE_SERIES_CLOSE;
+}
 
 //+------------------------------------------------------------------+
 //| Destructor                                                       |
 //+------------------------------------------------------------------+
-CSignalMA::~CSignalMA(void) {}
+CSignalSimpleMA::~CSignalSimpleMA(void) {}
 
 //+------------------------------------------------------------------+
 //| Validation settings protected data.                              |
 //+------------------------------------------------------------------+
-bool CSignalMA::ValidationSettings(void) {
+bool CSignalSimpleMA::ValidationSettings(void) {
 //--- validation settings of additional filters
    if(!CExpertSignal::ValidationSettings())
       return(false);
@@ -84,7 +87,7 @@ bool CSignalMA::ValidationSettings(void) {
 //+------------------------------------------------------------------+
 //| Create indicators.                                               |
 //+------------------------------------------------------------------+
-bool CSignalMA::InitIndicators(CIndicators *indicators)
+bool CSignalSimpleMA::InitIndicators(CIndicators *indicators)
   {
 //--- check pointer
    if(indicators==NULL)
@@ -102,7 +105,7 @@ bool CSignalMA::InitIndicators(CIndicators *indicators)
 //+------------------------------------------------------------------+
 //| Initialize MA indicators.                                        |
 //+------------------------------------------------------------------+
-bool CSignalMA::InitMA(CIndicators *indicators) {
+bool CSignalSimpleMA::InitMA(CIndicators *indicators) {
 //--- check pointer
    if(indicators==NULL)
       return(false);
@@ -122,7 +125,7 @@ bool CSignalMA::InitMA(CIndicators *indicators) {
    return(true);
 }
 
-double getMinSlope() {
+double CSignalSimpleMA::getMinSlope() {
   switch (m_period) {
     case PERIOD_H4: return(H4_MIN_SLOPE);
     case PERIOD_D1: return(DAILY_MIN_SLOPE);
@@ -130,7 +133,7 @@ double getMinSlope() {
   }
 }
 
-int CSignalMA::LongCondition(void) {
+int CSignalSimpleMA::LongCondition(void) {
    int result = 0;
    if (matchLongPattern0(StartIndex())) {
       result = m_pattern_0;
@@ -138,10 +141,10 @@ int CSignalMA::LongCondition(void) {
    return(result);
 }
 
-int CSignalMA::ShortCondition(void) {
+int CSignalSimpleMA::ShortCondition(void) {
    int result = 0;
-   if (matchShortPaterrn0(StartIndex())) {
-      return = m_pattern_0;
+   if (matchShortPattern0(StartIndex())) {
+      result = m_pattern_0;
    }
    return(result);
 }
