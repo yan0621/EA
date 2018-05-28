@@ -17,7 +17,8 @@ protected:
    ENUM_MA_METHOD m_ma_method;      // the "method of averaging" parameter of the indicator
    ENUM_APPLIED_PRICE m_ma_applied;    // the "object of averaging" parameter of the indicator
    //--- "weights" of market models (0-100)
-   int m_pattern_0;      // model 0 "close price is on the necessary side of indicator and indicator is moving towards right direction with big enough slope"
+   int m_pattern_0;      // 0 "close price is on the necessary side of indicator and indicator is moving towards right direction with big enough slope"
+   int m_pattern_1;      // 1 "indicator is moving towards right direction with increasing slope"
 
 public:
    CSignalSimpleMA(void);
@@ -47,6 +48,9 @@ protected:
 
    bool matchLongPattern0(int idx) { return(Close(idx) > MA(idx) && MASlope(idx) > getMinSlope()); }
    bool matchShortPattern0(int idx) { return(Close(idx) < MA(idx) && -MASlope(idx) > getMinSlope()); }
+
+   bool matchLongPattern1(int idx) { return(Close(idx) > MA(idx) && MASlope(idx) > MASlope(idx+1) && MASlope(idx+1) > 0); }
+   bool matchShortPattern1(int idx) { return(Close(idx) < MA(idx) && MASlope(idx) < MASlope(idx+1) && MASlope(idx+1) < 0); }
 };
 
 //+------------------------------------------------------------------+
@@ -57,7 +61,8 @@ CSignalSimpleMA::CSignalSimpleMA(void):
    m_ma_shift(0),
    m_ma_method(MODE_SMA),
    m_ma_applied(PRICE_CLOSE),
-   m_pattern_0(100)
+   m_pattern_0(100),
+   m_pattern_1(100)
 {
    m_used_series |= USE_SERIES_CLOSE;
 }
@@ -135,16 +140,22 @@ double CSignalSimpleMA::getMinSlope() {
 
 int CSignalSimpleMA::LongCondition(void) {
    int result = 0;
-   if (matchLongPattern0(StartIndex())) {
+   if (IS_PATTERN_USAGE(0) && matchLongPattern0(StartIndex())) {
       result = m_pattern_0;
+   }
+   if (IS_PATTERN_USAGE(1) && matchLongPattern1(StartIndex())) {
+      result = m_pattern_1;
    }
    return(result);
 }
 
 int CSignalSimpleMA::ShortCondition(void) {
    int result = 0;
-   if (matchShortPattern0(StartIndex())) {
+   if (IS_PATTERN_USAGE(0) && matchShortPattern0(StartIndex())) {
       result = m_pattern_0;
+   }
+   if (IS_PATTERN_USAGE(1) && matchShortPattern1(StartIndex())) {
+      result = m_pattern_1;
    }
    return(result);
 }

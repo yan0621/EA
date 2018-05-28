@@ -4,20 +4,27 @@
  * Trailing with Support and Resistance Level
  */
 class CTrailingSR : public CExpertTrailing {
+
 public:
   static const int MAX_RATE_NUM;
   static const int MIN_CONTINOUS_CANDLE_NUM;
   static const int PEAK_RADIUS;
 
+protected:
+  bool use_current_period;
+
 public:
   CTrailingSR(void);
   ~CTrailingSR(void);
+
+  void UseCurrentPeriod(bool value) { use_current_period = use_current_period; }
    
-  virtual bool      CheckTrailingStopLong(CPositionInfo *position,double &sl,double &tp);
-  virtual bool      CheckTrailingStopShort(CPositionInfo *position,double &sl,double &tp);
+  virtual bool CheckTrailingStopLong(CPositionInfo *position,double &sl,double &tp);
+  virtual bool CheckTrailingStopShort(CPositionInfo *position,double &sl,double &tp);
 
 protected:
   double calculateStopLevel(MqlRates &historyData[], int dataLen, bool isLongOrder);
+  ENUM_TIMEFRAMES getTimeFrameToAnalyze();
 };
 
 const int CTrailingSR::MAX_RATE_NUM = 12;
@@ -27,7 +34,7 @@ const int CTrailingSR::PEAK_RADIUS = 1;
 //+------------------------------------------------------------------+
 //| Constructor                                                      |
 //+------------------------------------------------------------------+
-CTrailingSR::CTrailingSR(void) {
+CTrailingSR::CTrailingSR(void): use_current_period(true) {
 }
 //+------------------------------------------------------------------+
 //| Destructor                                                       |
@@ -108,13 +115,24 @@ double CTrailingSR::calculateStopLevel(MqlRates &historyData[], int dataLen, boo
   return 0;
 }
 
+ENUM_TIMEFRAMES CTrailingSR::getTimeFrameToAnalyze() {
+  if (use_current_period) {
+    return m_period;
+  }
+  switch(m_period) {
+    case PERIOD_H4: return PERIOD_H1;
+    case PERIOD_D1: return PERIOD_H4;
+    default: return NULL;
+  }
+}
+
 bool CTrailingSR::CheckTrailingStopLong(CPositionInfo *position,double &sl,double &tp) {
   if (NULL == position) {
     return(false);
   }
 
   MqlRates historyData[];
-  CopyRates(m_symbol.Name(), m_period, StartIndex(), MAX_RATE_NUM, historyData);
+  CopyRates(m_symbol.Name(), getTimeFrameToAnalyze(), StartIndex(), MAX_RATE_NUM, historyData);
 
   double level = NormalizeDouble(m_symbol.Bid() - m_symbol.StopsLevel() * m_symbol.Point(), m_symbol.Digits());
   double new_sl = NormalizeDouble(calculateStopLevel(historyData, MAX_RATE_NUM, true), m_symbol.Digits());
@@ -136,7 +154,7 @@ bool CTrailingSR::CheckTrailingStopShort(CPositionInfo *position,double &sl,doub
   }
 
   MqlRates historyData[];
-  CopyRates(m_symbol.Name(), m_period, StartIndex(), MAX_RATE_NUM, historyData);
+  CopyRates(m_symbol.Name(), getTimeFrameToAnalyze(), StartIndex(), MAX_RATE_NUM, historyData);
 
   double level = NormalizeDouble(m_symbol.Bid() - m_symbol.StopsLevel() * m_symbol.Point(), m_symbol.Digits());
   double new_sl = NormalizeDouble(calculateStopLevel(historyData, MAX_RATE_NUM, false), m_symbol.Digits());

@@ -7,7 +7,7 @@ private:
    int m_turtle_size; // size of turtle rule
    
    // patterns
-   int pattern_0; // turtle breakout following MA direction
+   int t_pattern_0; // turtle breakout following MA direction
 
 public:
    CSignalFloatTurtle(void);
@@ -37,7 +37,7 @@ protected:
 
 CSignalFloatTurtle::CSignalFloatTurtle(void):
    m_turtle_size(4),
-   pattern_0(100) // single pattern
+   t_pattern_0(100) // single pattern
    {
       m_used_series |= USE_SERIES_CLOSE;
    }
@@ -101,7 +101,7 @@ int CSignalFloatTurtle::LongCondition() {
    int idx = StartIndex();
    printf("turtle = %d, close = %.4g, ma = %.4g", Turtle(idx), Close(idx), MA(idx));
    if (Turtle(idx) > 0 && CSignalSimpleMA::matchLongPattern0(idx)) {
-      result = pattern_0;
+      result = t_pattern_0;
    }
    return(result);
 }
@@ -111,7 +111,7 @@ int CSignalFloatTurtle::ShortCondition() {
    int idx = StartIndex();
    printf("turtle = %d, close = %.4f, ma = %.4f", Turtle(idx), Close(idx), MA(idx));
    if (Turtle(idx) < 0 && CSignalSimpleMA::matchShortPattern0(idx)) {
-      result = pattern_0;
+      result = t_pattern_0;
    }
    return(result);
 }
