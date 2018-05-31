@@ -17,6 +17,7 @@ bool         Expert_EveryTick            =false;
 input int Inp_Signal_MA_Period = 20;
 input int Inp_Signal_Turtle_Size = 4;
 input bool Inp_Trailing_Use_Current_Period = true;
+input bool Inp_Trailing_Set_Tp_According_To_Last_Deal = false;
 
 // Global Var
 CExpert ExtExpert;
@@ -82,6 +83,7 @@ int OnInit()
      }
 //--- Set trailing parameters
    trailing.UseCurrentPeriod(Inp_Trailing_Use_Current_Period);
+   trailing.SetTpAccorrdingToLastDeal(Inp_Trailing_Set_Tp_According_To_Last_Deal);
 //--- Check trailing parameters
    if(!trailing.ValidationSettings())
      {
