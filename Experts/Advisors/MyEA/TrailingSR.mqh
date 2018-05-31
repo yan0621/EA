@@ -145,7 +145,7 @@ ENUM_TIMEFRAMES CTrailingSR::getTimeFrameToAnalyze() {
 
 
 bool CTrailingSR::isLastDealLoss() {
-  HistorySelect(0, CurrentTime());
+  HistorySelect(0, TimeCurrent());
   // get last deal
   ulong ticket = HistoryDealGetTicket(HistoryDealsTotal() - 1);
   return HistoryDealGetDouble(ticket, DEAL_PROFIT) > 0;
